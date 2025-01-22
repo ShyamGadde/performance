@@ -163,6 +163,8 @@ function od_get_current_theme_template() {
 	return null;
 }
 
+
+
 /**
  * Gets the current ETag for URL Metrics.
  *
