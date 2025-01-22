@@ -70,7 +70,7 @@ jobs:
           # For push to 'trunk' or 'release/**' events, run all plugins regardless of changes.
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then
             AFFECTED_PLUGINS=($(ls plugins))
-            echo "changed_plugins=${AFFECTED_PLUGINS[*]}" >> $GITHUB_OUTPUT
+            echo "plugins=${AFFECTED_PLUGINS[*]}" >> $GITHUB_OUTPUT
             exit 0
           fi
 
@@ -86,7 +86,8 @@ jobs:
           git rev-parse --verify $HEAD_SHA || echo "Head SHA invalid"
 
           CHANGED_FILES=$(git diff --name-only $BASE_SHA $HEAD_SHA)
-          echo "Changed files: $CHANGED_FILES"
+          echo 'Changed files:'
+          for FILE in "$CHANGED_FILES"; do echo "$FILE"; done
 
           # Check for global changes (any file outside plugins/).
           GLOBAL_CHANGES=false
@@ -100,7 +101,7 @@ jobs:
           if [ "$GLOBAL_CHANGES" = true ]; then
             # Test all plugins if global changes detected.
             AFFECTED_PLUGINS=($(ls plugins))
-            echo "Global changes detected; running all plugins: ${AFFECTED_PLUGINS[*]}"
+            echo "Global changes detected; running tests for all plugins: ${AFFECTED_PLUGINS[*]}"
           else
             # Extract affected plugins and their dependencies.
             declare -a AFFECTED_PLUGINS=()
@@ -132,11 +133,12 @@ jobs:
 
             # Remove duplicate entries.
             AFFECTED_PLUGINS=($(echo "${AFFECTED_PLUGINS[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+
             echo "Plugins with changes: ${AFFECTED_PLUGINS[*]}"
           fi
 
           # Output the list of plugins to test.
-          echo "affected_plugins=${AFFECTED_PLUGINS[*]}" >> $GITHUB_OUTPUT
+          echo "plugins=${AFFECTED_PLUGINS[*]}" >> $GITHUB_OUTPUT
       - name: Setup Node.js (.nvmrc)
         uses: actions/setup-node@v4
         with:
@@ -168,22 +170,22 @@ jobs:
       - name: Running single site unit tests
         run: |
           if [ "${{ matrix.coverage }}" == "true" ]; then
-            for PLUGIN in ${{ steps.affected-plugins.outputs.affected_plugins }}; do
+            for PLUGIN in ${{ steps.affected-plugins.outputs.plugins }}; do
               npm run test-php:$PLUGIN -- -- -- --coverage-clover=./single-site-reports/coverage-$PLUGIN.xml
             done
           else
-            for PLUGIN in ${{ steps.affected-plugins.outputs.affected_plugins }}; do
+            for PLUGIN in ${{ steps.affected-plugins.outputs.plugins }}; do
               npm run test-php:$PLUGIN
             done
           fi
       - name: Running multisite unit tests
         run: |
           if [ "${{ matrix.coverage }}" == "true" ]; then
-            for PLUGIN in ${{ steps.affected-plugins.outputs.affected_plugins }}; do
+            for PLUGIN in ${{ steps.affected-plugins.outputs.plugins }}; do
               npm run test-php-multisite:$PLUGIN -- -- -- --coverage-clover=./multisite-reports/coverage-multisite-$PLUGIN.xml
             done
           else
-            for PLUGIN in ${{ steps.affected-plugins.outputs.affected_plugins }}; do
+            for PLUGIN in ${{ steps.affected-plugins.outputs.plugins }}; do
               npm run test-php-multisite:$PLUGIN
             done
           fi
