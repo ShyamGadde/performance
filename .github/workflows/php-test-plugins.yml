@@ -59,13 +59,10 @@ jobs:
     steps:
       - uses: styfle/cancel-workflow-action@0.12.1
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Get full Git history.
       - name: Determine affected plugins
         id: affected-plugins
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
-          GITHUB_BASE_REF: ${{ github.base_ref }}
         run: |
           # For push to 'trunk' or 'release/**' events, run all plugins regardless of changes.
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then
@@ -74,20 +71,14 @@ jobs:
             exit 0
           fi
 
-          # For pull requests, fetch base branch.
-          git fetch origin $GITHUB_BASE_REF --depth=1
-
           # Get the actual commit SHAs
           BASE_SHA=${{ github.event.pull_request.base.sha }}
-          HEAD_SHA=${{ github.sha }}
+          HEAD_SHA=${{ github.event.pull_request.head.sha }}
 
-          # Verify SHAs exist
-          git rev-parse --verify $BASE_SHA || echo "Base SHA invalid"
-          git rev-parse --verify $HEAD_SHA || echo "Head SHA invalid"
+          # For pull requests, fetch base branch.
+          git fetch origin $BASE_SHA --depth=1
 
-          CHANGED_FILES=$(git diff --name-only $BASE_SHA $HEAD_SHA)
-          echo 'Changed files:'
-          for FILE in "$CHANGED_FILES"; do echo "$FILE"; done
+          CHANGED_FILES=$(git diff --name-only $BASE_SHA...$HEAD_SHA)
 
           # Check for global changes (any file outside plugins/).
           GLOBAL_CHANGES=false
