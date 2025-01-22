@@ -168,22 +168,22 @@ jobs:
       - name: Running single site unit tests
         run: |
           if [ "${{ matrix.coverage }}" == "true" ]; then
-            for PLUGIN in ${{ steps.changed-plugins.outputs.affected_plugins }}; do
+            for PLUGIN in ${{ steps.affected-plugins.outputs.affected_plugins }}; do
               npm run test-php:$PLUGIN -- -- -- --coverage-clover=./single-site-reports/coverage-$PLUGIN.xml
             done
           else
-            for PLUGIN in ${{ steps.changed-plugins.outputs.affected_plugins }}; do
+            for PLUGIN in ${{ steps.affected-plugins.outputs.affected_plugins }}; do
               npm run test-php:$PLUGIN
             done
           fi
       - name: Running multisite unit tests
         run: |
           if [ "${{ matrix.coverage }}" == "true" ]; then
-            for PLUGIN in ${{ steps.changed-plugins.outputs.affected_plugins }}; do
+            for PLUGIN in ${{ steps.affected-plugins.outputs.affected_plugins }}; do
               npm run test-php-multisite:$PLUGIN -- -- -- --coverage-clover=./multisite-reports/coverage-multisite-$PLUGIN.xml
             done
           else
-            for PLUGIN in ${{ steps.changed-plugins.outputs.affected_plugins }}; do
+            for PLUGIN in ${{ steps.affected-plugins.outputs.affected_plugins }}; do
               npm run test-php-multisite:$PLUGIN
             done
           fi
