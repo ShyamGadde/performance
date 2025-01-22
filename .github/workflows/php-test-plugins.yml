@@ -74,8 +74,9 @@ jobs:
           BASE_SHA=${{ github.event.pull_request.base.sha }}
           HEAD_SHA=${{ github.event.pull_request.head.sha }}
 
-          # For pull requests, fetch base branch.
+          # Fetch exact commits (no branch reference)
           git fetch origin $BASE_SHA --depth=1
+          git fetch origin $HEAD_SHA --depth=1
 
           CHANGED_FILES=$(git diff --name-only $BASE_SHA $HEAD_SHA)
 
