@@ -21,6 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 // @codeCoverageIgnoreEnd
 
+
 (
 	/**
 	 * Register this copy of the plugin among other potential copies embedded in plugins or themes.
