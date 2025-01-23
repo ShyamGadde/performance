@@ -66,6 +66,8 @@ jobs:
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
+          set -x  # Print commands and their arguments as they are executed.
+
           # For push to 'trunk' or 'release/**' events, test all plugins regardless of changes.
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then
             AFFECTED_PLUGINS=($(ls plugins))
