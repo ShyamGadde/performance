@@ -71,7 +71,7 @@ jobs:
             AFFECTED_PLUGINS=($(ls plugins))
             echo "Event: $GITHUB_EVENT_NAME - Running tests for all plugins. Affected plugins: ${AFFECTED_PLUGINS[*]}"
 
-            echo "changed_plugins=${AFFECTED_PLUGINS[*]}" >> $GITHUB_OUTPUT
+            echo "plugins=${AFFECTED_PLUGINS[*]}" >> $GITHUB_OUTPUT
             exit 0
           fi
 
