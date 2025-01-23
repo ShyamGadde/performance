@@ -44,6 +44,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 				}
 			};
 
+
+			
 			/*
 			 * Wait until after the plugins have loaded and the theme has loaded. The after_setup_theme action could be
 			 * used since it is the first action that fires once the theme is loaded. However, plugins may embed this
