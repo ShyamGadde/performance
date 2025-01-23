@@ -66,8 +66,6 @@ jobs:
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
-          set -x  # Print commands and their arguments as they are executed.
-
           # For push to 'trunk' or 'release/**' events, test all plugins regardless of changes.
           if [ "$GITHUB_EVENT_NAME" = "push" ]; then
             AFFECTED_PLUGINS=($(ls plugins))
@@ -77,18 +75,34 @@ jobs:
           fi
 
           # Get PR-specific changes using merge-base diff.
-          CHANGED_FILES=$(git diff --name-only HEAD^1...HEAD^2)
+          CHANGED_FILES=$(git diff --name-only HEAD^1...HEAD^2) # In this context, `HEAD^1` is the base branch and `HEAD^2` is the PR branch.
           echo "Changed files:"
           echo "$CHANGED_FILES"
 
           # Check for global changes (any file outside plugins/).
-          GLOBAL_CHANGES=$(echo "$CHANGED_FILES" | grep -v '^plugins/')
-          if [ -n "$GLOBAL_CHANGES" ]; then
+          GLOBAL_CHANGES=false
+          for FILE in $CHANGED_FILES; do
+            if [[ "$FILE" != plugins/* ]]; then
+              GLOBAL_CHANGES=true
+              break
+            fi
+          done
+
+          if [ "$GLOBAL_CHANGES" = true ]; then
+            # Test all plugins if global changes detected.
             AFFECTED_PLUGINS=($(ls plugins))
             echo "Global changes detected; testing all plugins: ${AFFECTED_PLUGINS[*]}"
           else
             # Extract affected plugins and their dependencies.
-            AFFECTED_PLUGINS=($(echo "$CHANGED_FILES" | grep '^plugins/' | cut -d'/' -f2 | sort -u))
+            declare -a AFFECTED_PLUGINS=()
+            for FILE in $CHANGED_FILES; do
+              if [[ "$FILE" == plugins/* ]]; then
+                PLUGIN_NAME=$(echo "$FILE" | cut -d'/' -f2)
+                if [[ ! " ${AFFECTED_PLUGINS[@]} " =~ " ${PLUGIN_NAME} " ]]; then
+                  AFFECTED_PLUGINS+=("$PLUGIN_NAME")
+                fi
+              fi
+            done
 
             # Define plugin dependencies (e.g., optimization-detective triggers others).
             declare -A PLUGIN_DEPENDENCIES=(
@@ -97,8 +111,9 @@ jobs:
 
             # Add dependent plugins to the list.
             for PLUGIN in "${AFFECTED_PLUGINS[@]}"; do
-              if [ -n "${PLUGIN_DEPENDENCIES[$PLUGIN]}" ]; then
-                for DEP in ${PLUGIN_DEPENDENCIES[$PLUGIN]}; do
+              if [[ -n "${PLUGIN_DEPENDENCIES[$PLUGIN]}" ]]; then
+                DEPENDENCIES=(${PLUGIN_DEPENDENCIES[$PLUGIN]})
+                for DEP in "${DEPENDENCIES[@]}"; do
                   if [[ ! " ${AFFECTED_PLUGINS[@]} " =~ " ${DEP} " ]]; then
                     AFFECTED_PLUGINS+=("$DEP")
                   fi
