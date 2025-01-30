@@ -93,16 +93,13 @@ jobs:
           # Print the list of changed plugins.
           echo "Plugins with changes: ${ALL_CHANGED_PLUGINS[*]}"
 
-          # Define plugin dependencies (e.g., optimization-detective triggers others).
+          # Define and add plugin dependencies (e.g., optimization-detective triggers others).
           declare -A PLUGIN_DEPENDENCIES=(
             ["optimization-detective"]="embed-optimizer image-prioritizer"
           )
-
-          # Add dependent plugins to the list.
           for PLUGIN in "${ALL_CHANGED_PLUGINS[@]}"; do
             if [[ -n "${PLUGIN_DEPENDENCIES[$PLUGIN]}" ]]; then
-              DEPENDENCIES=(${PLUGIN_DEPENDENCIES[$PLUGIN]})
-              for DEP in "${DEPENDENCIES[@]}"; do
+              for DEP in ${PLUGIN_DEPENDENCIES[$PLUGIN]}; do
                 if [[ ! " ${ALL_CHANGED_PLUGINS[@]} " =~ " ${DEP} " ]]; then
                   ALL_CHANGED_PLUGINS+=("$DEP")
                 fi
@@ -111,7 +108,7 @@ jobs:
           done
 
           # Sort entries.
-          ALL_CHANGED_PLUGINS=($(echo "${ALL_CHANGED_PLUGINS[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+          ALL_CHANGED_PLUGINS=($(echo "${ALL_CHANGED_PLUGINS[@]}" | tr ' ' '\n' | sort | tr '\n' ' '))
           echo "Plugins with changes: ${ALL_CHANGED_PLUGINS[*]}"
 
           echo "all_changed_plugins=${ALL_CHANGED_PLUGINS[*]}" >> $GITHUB_OUTPUT
