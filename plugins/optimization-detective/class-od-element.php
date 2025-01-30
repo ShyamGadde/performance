@@ -24,6 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @access private
  */
 class OD_Element implements ArrayAccess, JsonSerializable {
+
 	/**
 	 * Data.
 	 *
