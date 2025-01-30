@@ -81,7 +81,7 @@ jobs:
             exit 0
           fi
 
-          ALL_CHANGED_FILES=${{ steps.changed-files.outputs.all_changed_files }}
+          ALL_CHANGED_FILES=${{ steps.changed-files.outputs.plugins_all_changed_files }}
           echo "All Changed files:"
           echo "$ALL_CHANGED_FILES"
 
