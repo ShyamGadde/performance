@@ -81,7 +81,7 @@ jobs:
             exit 0
           fi
 
-          ALL_CHANGED_FILES=${{ steps.changed-files.outputs.plugins_all_changed_files }}
+          ALL_CHANGED_FILES="${{ steps.changed-files.outputs.plugins_all_changed_files }}"
           echo "All Changed files:"
           echo "$ALL_CHANGED_FILES"
 
@@ -117,7 +117,6 @@ jobs:
           ALL_CHANGED_PLUGINS=($(echo "${ALL_CHANGED_PLUGINS[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
           echo "Plugins with changes: ${ALL_CHANGED_PLUGINS[*]}"
 
-          # Output the list of plugins to test.
           echo "all_changed_plugins=${ALL_CHANGED_PLUGINS[*]}" >> $GITHUB_OUTPUT
       - name: Setup Node.js (.nvmrc)
         uses: actions/setup-node@v4
