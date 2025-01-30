@@ -64,3 +64,4 @@ parameters:
 		-
 			identifier: staticMethod.dynamicCall
 			path: */tests/*
+

@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 // @codeCoverageIgnoreEnd
 
+
 /**
  * Initializes Image Prioritizer when Optimization Detective has loaded.
  *

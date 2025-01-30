@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 // @codeCoverageIgnoreEnd
 
+
 /**
  * Exception thrown when failing to validate URL Metrics data.
  *
