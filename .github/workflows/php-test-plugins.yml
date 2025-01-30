@@ -31,7 +31,6 @@ on:
       - reopened
       - synchronize
 
-
 jobs:
   php-test-plugins:
     name: "PHP ${{ matrix.php }} / WP ${{ matrix.wp }}"
