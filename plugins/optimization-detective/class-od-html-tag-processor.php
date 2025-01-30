@@ -19,7 +19,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @access private
  */
 final class OD_HTML_Tag_Processor extends WP_HTML_Tag_Processor {
-
 	/**
 	 * Raw text tags.
 	 *
