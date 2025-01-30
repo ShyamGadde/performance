@@ -63,7 +63,7 @@ jobs:
         with:
           files_yaml: |
             plugins:
-              - 'plugins/**.php'
+              - 'plugins/**'
             config:
               - '.github/workflows/php-test-plugins.yml'
               - '.wp-env.json'
