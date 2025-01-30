@@ -84,20 +84,14 @@ jobs:
             exit 0
           fi
 
-          ALL_CHANGED_FILES="${{ steps.changed-files.outputs.plugins_all_changed_files }}"
-          echo "All Changed files:"
-          echo "$ALL_CHANGED_FILES"
-
-          # Extract affected plugins.
           declare -a ALL_CHANGED_PLUGINS=()
-          for FILE in $ALL_CHANGED_FILES; do
-            if [[ "$FILE" == plugins/* ]]; then
-              PLUGIN_NAME=$(echo "$FILE" | cut -d'/' -f2)
-              if [[ ! " ${ALL_CHANGED_PLUGINS[@]} " =~ " ${PLUGIN_NAME} " ]]; then
-                ALL_CHANGED_PLUGINS+=("$PLUGIN_NAME")
-              fi
-            fi
+          for DIR in ${{ steps.changed-files.outputs.plugins_all_changed_files }}; do
+            PLUGIN_NAME=$(basename "$DIR")
+            ALL_CHANGED_PLUGINS+=("$PLUGIN_NAME")
           done
+
+          # Print the list of changed plugins.
+          echo "Plugins with changes: ${ALL_CHANGED_PLUGINS[*]}"
 
           # Define plugin dependencies (e.g., optimization-detective triggers others).
           declare -A PLUGIN_DEPENDENCIES=(
