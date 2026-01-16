@@ -6,6 +6,7 @@
  * @since 1.0.0
  */
 
+
 // @codeCoverageIgnoreStart
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
