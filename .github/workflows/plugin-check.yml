@@ -95,6 +95,8 @@ jobs:
         run: |
           ALL_PLUGINS=$(jq -c '.plugins' plugins.json)
 
+          echo "ALL_PLUGINS=$ALL_PLUGINS"
+
           # For non-PR events (push to trunk/develop), run all plugins
           if [ "${{ github.event_name }}" != "pull_request" ]; then
               echo "plugins=$ALL_PLUGINS" >> $GITHUB_OUTPUT
