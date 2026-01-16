@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // @codeCoverageIgnoreEnd
 
 /**
- * Obtains the ID for a post related to this response so that page caches can be told to invalidate their cache.
+ * Gets the ID for a post related to this response so that page caches can be told to invalidate their cache.
  *
  * If the queried object for the response is a post, then that post's ID is used. Otherwise, it uses the ID of the first
  * post in The Loop.
@@ -23,15 +23,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  * this ID if the relevant actions are triggered for the post (e.g. clean_post_cache, save_post, transition_post_status).
  *
  * Otherwise, if the response is an archive page or the front page where show_on_front=posts (i.e. is_home), then
- * there is no singular post object that represents the URL. In this case, we obtain the first post in the main
- * loop. By triggering the relevant actions for this post ID, page caches will have their best shot at invalidating
+ * there is no singular post object that represents the URL. In this case, we get the first post in the main
+ * loop. By triggering the relevant actions for this post ID, page caches will be more likely able to invalidate
  * the related URLs. Page caching plugins which leverage surrogate keys will be the most reliable here. Otherwise,
  * caching plugins may just resort to automatically purging the cache for the homepage whenever any post is edited,
  * which is better than nothing.
  *
  * There should not be any situation by default in which a page optimized with Optimization Detective does not have such
  * a post available for cache purging. As seen in {@see od_can_optimize_response()}, when such a post ID is not
- * available for cache purging then it returns false, as it also does in another case like if is_404().
+ * available for cache purging, then it returns false, as it also does in another case like if is_404().
  *
  * @since 0.8.0
  * @access private
@@ -65,15 +65,16 @@ function od_get_cache_purge_post_id(): ?int {
 }
 
 /**
- * Prints the script for detecting loaded images and the LCP element.
+ * Prints the scripts for the detect loader.
  *
  * @since 0.1.0
+ * @since 1.0.0 Renamed from od_get_detection_script().
  * @access private
  *
  * @param non-empty-string               $slug             URL Metrics slug.
  * @param OD_URL_Metric_Group_Collection $group_collection URL Metric group collection.
  */
-function od_get_detection_script( string $slug, OD_URL_Metric_Group_Collection $group_collection ): string {
+function od_get_detection_scripts( string $slug, OD_URL_Metric_Group_Collection $group_collection ): string {
 
 	/**
 	 * Filters whether to use the web-vitals.js build with attribution.
@@ -108,12 +109,17 @@ function od_get_detection_script( string $slug, OD_URL_Metric_Group_Collection $
 	/**
 	 * Filters whether URL Metric JSON data should be compressed with gzip when being submitted to the `/url-metrics:store` REST API endpoint.
 	 *
-	 * @since n.e.x.t
+	 * @since 1.0.0
 	 * @link https://github.com/WordPress/performance/blob/trunk/plugins/optimization-detective/docs/hooks.md#:~:text=Filter%3A%20od_gzip_url_metric_store_request_payloads
 	 *
 	 * @param bool $gzip_url_metric_store_request_payloads Whether to use gzip to compress URL Metric JSON.
 	 */
 	$gzdecode_available = function_exists( 'gzdecode' ) && apply_filters( 'od_gzip_url_metric_store_request_payloads', true );
+
+	$detect_src = add_query_arg(
+		array( 'ver' => OPTIMIZATION_DETECTIVE_VERSION ),
+		plugins_url( od_get_asset_path( 'detect.js' ), __FILE__ )
+	);
 
 	$detect_args = array(
 		'minViewportAspectRatio' => od_get_minimum_viewport_aspect_ratio(),
@@ -149,14 +155,36 @@ function od_get_detection_script( string $slug, OD_URL_Metric_Group_Collection $
 		$detect_args['urlMetricGroupCollection'] = $group_collection;
 	}
 
-	return wp_get_inline_script_tag(
-		sprintf(
-			'import detect from %s; detect( %s );',
-			wp_json_encode( plugins_url( add_query_arg( 'ver', OPTIMIZATION_DETECTIVE_VERSION, od_get_asset_path( 'detect.js' ) ), __FILE__ ) ),
-			wp_json_encode( $detect_args )
+	$json_flags = JSON_HEX_TAG | JSON_UNESCAPED_SLASHES;
+	if ( SCRIPT_DEBUG ) {
+		$json_flags |= JSON_PRETTY_PRINT;
+	}
+	$json_script = wp_get_inline_script_tag(
+		(string) wp_json_encode(
+			array( $detect_src, $detect_args ),
+			$json_flags
 		),
+		array(
+			'type' => 'application/json',
+			'id'   => 'optimization-detective-detect-args',
+		)
+	);
+
+	$module_js  = file_get_contents( __DIR__ . '/' . od_get_asset_path( 'detect-loader.js' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- It's a local filesystem path not a remote request.
+	$module_js .= sprintf(
+		"\n//# sourceURL=%s",
+		add_query_arg(
+			array( 'ver' => OPTIMIZATION_DETECTIVE_VERSION ),
+			plugins_url( od_get_asset_path( 'detect-loader.js' ), __FILE__ )
+		)
+	);
+
+	$module_script = wp_get_inline_script_tag(
+		$module_js,
 		array( 'type' => 'module' )
 	);
+
+	return $json_script . $module_script;
 }
 
 /**
@@ -178,7 +206,7 @@ function od_register_rest_url_metric_store_endpoint(): void {
 /**
  * Decompresses the REST API request body for the URL Metrics endpoint.
  *
- * @since n.e.x.t
+ * @since 1.0.0
  * @access private
  *
  * @phpstan-param WP_REST_Request<array<string, mixed>> $request

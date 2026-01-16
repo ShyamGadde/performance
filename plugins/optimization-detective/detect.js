@@ -27,14 +27,14 @@
  */
 
 /**
- * Window reference to reduce size when script is minified.
+ * Window reference to reduce size when the script is minified.
  *
  * @type {Window}
  */
 const win = window;
 
 /**
- * Document reference to reduce size when script is minified.
+ * Document reference to reduce size when the script is minified.
  *
  * @type {Document}
  */
@@ -184,7 +184,7 @@ function createLogger(
 /**
  * Attempts to get the extension name (i.e. slug for plugin or theme) from the script module URL.
  *
- * If extraction of the slug fails then the entire URL is returned.
+ * If extraction of the slug fails, then the entire URL is returned.
  *
  * @param {string} scriptModuleUrl - Script module URL.
  * @return {string} Derived extension name.
@@ -244,7 +244,7 @@ async function getAlreadySubmittedSessionStorageKey(
 	urlMetricGroupStatus,
 	{ warn, error }
 ) {
-	if ( ! window.crypto || ! window.crypto.subtle ) {
+	if ( ! win.crypto || ! win.crypto.subtle ) {
 		warn(
 			'Unable to generate sessionStorage key for already-submitted URL since crypto is not available, likely due to to the page not being served via HTTPS.'
 		);
@@ -509,27 +509,45 @@ function debounceCompressUrlMetric() {
  */
 
 /**
- * Detects the LCP element, loaded images, client viewport and store for future optimizations.
+ * Args for the detect function.
  *
- * @param {Object}                 args                            - Args.
- * @param {string[]}               args.extensionModuleUrls        - URLs for extension script modules to import.
- * @param {number}                 args.minViewportAspectRatio     - Minimum aspect ratio allowed for the viewport.
- * @param {number}                 args.maxViewportAspectRatio     - Maximum aspect ratio allowed for the viewport.
- * @param {boolean}                args.isDebug                    - Whether to show debug messages.
- * @param {string}                 args.restApiEndpoint            - URL for where to send the detection data.
- * @param {string}                 [args.restApiNonce]             - Nonce for the REST API when the user is logged-in.
- * @param {boolean}                args.gzdecodeAvailable          - Whether application/gzip can be sent to the REST API.
- * @param {number}                 args.maxUrlMetricSize           - Maximum size of the URL Metric to send.
- * @param {string}                 args.currentETag                - Current ETag.
- * @param {string}                 args.currentUrl                 - Current URL.
- * @param {string}                 args.urlMetricSlug              - Slug for URL Metric.
- * @param {number|null}            args.cachePurgePostId           - Cache purge post ID.
- * @param {string}                 args.urlMetricHMAC              - HMAC for URL Metric storage.
- * @param {URLMetricGroupStatus[]} args.urlMetricGroupStatuses     - URL Metric group statuses.
- * @param {number}                 args.storageLockTTL             - The TTL (in seconds) for the URL Metric storage lock.
- * @param {number}                 args.freshnessTTL               - The freshness age (TTL) for a given URL Metric.
- * @param {string}                 args.webVitalsLibrarySrc        - The URL for the web-vitals library.
- * @param {CollectionDebugData}    [args.urlMetricGroupCollection] - URL Metric group collection, when in debug mode.
+ * @since 1.0.0
+ *
+ * @typedef {Object}                  DetectFunctionArgs
+ * @property {string[]}               extensionModuleUrls        - URLs for extension script modules to import.
+ * @property {number}                 minViewportAspectRatio     - Minimum aspect ratio allowed for the viewport.
+ * @property {number}                 maxViewportAspectRatio     - Maximum aspect ratio allowed for the viewport.
+ * @property {boolean}                isDebug                    - Whether to show debug messages.
+ * @property {string}                 restApiEndpoint            - URL for where to send the detection data.
+ * @property {string}                 [restApiNonce]             - Nonce for the REST API when the user is logged-in.
+ * @property {boolean}                gzdecodeAvailable          - Whether application/gzip can be sent to the REST API.
+ * @property {number}                 maxUrlMetricSize           - Maximum size of the URL Metric to send.
+ * @property {string}                 currentETag                - Current ETag.
+ * @property {string}                 currentUrl                 - Current URL.
+ * @property {string}                 urlMetricSlug              - Slug for URL Metric.
+ * @property {number|null}            cachePurgePostId           - Cache purge post ID.
+ * @property {string}                 urlMetricHMAC              - HMAC for URL Metric storage.
+ * @property {URLMetricGroupStatus[]} urlMetricGroupStatuses     - URL Metric group statuses.
+ * @property {number}                 storageLockTTL             - The TTL (in seconds) for the URL Metric storage lock.
+ * @property {number}                 freshnessTTL               - The freshness age (TTL) for a given URL Metric.
+ * @property {string}                 webVitalsLibrarySrc        - The URL for the web-vitals library.
+ * @property {CollectionDebugData}    [urlMetricGroupCollection] - URL Metric group collection, when in debug mode.
+ */
+
+/**
+ * The detect function.
+ *
+ * @since 1.0.0
+ * @callback DetectFunction
+ * @param {DetectFunctionArgs} args - The arguments for the function.
+ * @return {Promise<void>}
+ */
+
+/**
+ * Detects the LCP element, loaded images, client viewport, and store for future optimizations.
+ *
+ * @type {DetectFunction}
+ * @param {DetectFunctionArgs} args - Args.
  */
 export default async function detect( {
 	minViewportAspectRatio,
@@ -555,7 +573,7 @@ export default async function detect( {
 	const { log, warn, error } = logger;
 	compressionEnabled = gzdecodeAvailable;
 
-	if ( isDebug ) {
+	if ( isDebug && Array.isArray( urlMetricGroupCollection?.groups ) ) {
 		const allUrlMetrics = /** @type Array<UrlMetricDebugData> */ [];
 		for ( const group of urlMetricGroupCollection.groups ) {
 			for ( const otherUrlMetric of group.url_metrics ) {
@@ -580,7 +598,7 @@ export default async function detect( {
 		return;
 	}
 
-	if ( document.visibilityState === 'hidden' && ! document.prerendering ) {
+	if ( doc.visibilityState === 'hidden' && ! doc.prerendering ) {
 		log( 'Page opened in background tab so URL Metric is not collected.' );
 		return;
 	}
@@ -635,31 +653,6 @@ export default async function detect( {
 		return;
 	}
 
-	// Ensure the DOM is loaded (although it surely already is since we're executing in a module).
-	await new Promise( ( resolve ) => {
-		if ( doc.readyState !== 'loading' ) {
-			resolve();
-		} else {
-			doc.addEventListener( 'DOMContentLoaded', resolve, { once: true } );
-		}
-	} );
-
-	// Wait until the resources on the page have fully loaded.
-	await new Promise( ( resolve ) => {
-		if ( doc.readyState === 'complete' ) {
-			resolve();
-		} else {
-			win.addEventListener( 'load', resolve, { once: true } );
-		}
-	} );
-
-	// Wait yet further until idle.
-	if ( typeof requestIdleCallback === 'function' ) {
-		await new Promise( ( resolve ) => {
-			requestIdleCallback( resolve );
-		} );
-	}
-
 	// TODO: Does this make sense here? Should it be moved up above the isViewportNeeded condition?
 	// As an alternative to this, the od_print_detection_script() function can short-circuit if the
 	// od_is_url_metric_storage_locked() function returns true. However, the downside with that is page caching could
@@ -669,9 +662,9 @@ export default async function detect( {
 		return;
 	}
 
-	// Keep track of whether the window resized. If it resized, we abort sending the URLMetric.
+	// Keep track of whether the window resized. If it was resized, we abort sending the URLMetric.
 	let didWindowResize = false;
-	window.addEventListener(
+	win.addEventListener(
 		'resize',
 		() => {
 			didWindowResize = true;
@@ -704,10 +697,10 @@ export default async function detect( {
 	const breadcrumbedElementsMap = new Map(
 		[ ...breadcrumbedElements ].map(
 			/**
-			 * @param {HTMLElement} element
-			 * @return {[HTMLElement, string]} Tuple of element and its XPath.
+			 * @param {Element} element
+			 * @return {[Element, string]} Tuple of an element and its XPath.
 			 */
-			( element ) => [ element, element.dataset.odXpath ]
+			( element ) => [ element, element.getAttribute( 'data-od-xpath' ) ]
 		)
 	);
 
@@ -724,7 +717,7 @@ export default async function detect( {
 		}
 	}
 
-	// Wait for the intersection observer to report back on the initially-visible elements.
+	// Wait for the intersection observer to report back on the initially visible elements.
 	// Note that the first callback will include _all_ observed entries per <https://github.com/w3c/IntersectionObserver/issues/476>.
 	if ( breadcrumbedElementsMap.size > 0 ) {
 		await new Promise( ( resolve ) => {
@@ -756,7 +749,7 @@ export default async function detect( {
 	/** @type {(LCPMetric|LCPMetricWithAttribution)[]} */
 	const lcpMetricCandidates = [];
 
-	// Obtain at least one LCP candidate. More may be reported before the page finishes loading.
+	// Get at least one LCP candidate. More may be reported before the page finishes loading.
 	await new Promise( ( resolve ) => {
 		onLCP(
 			/**
@@ -769,7 +762,7 @@ export default async function detect( {
 				resolve();
 			},
 			{
-				// This avoids needing to click to finalize LCP candidate. While this is helpful for testing, it also
+				// This avoids needing to click to finalize the LCP candidate. While this is helpful for testing, it also
 				// ensures that we always get an LCP candidate reported. Otherwise, the callback may never fire if the
 				// user never does a click or keydown, per <https://github.com/GoogleChrome/web-vitals/blob/07f6f96/src/onLCP.ts#L99-L107>.
 				reportAllChanges: true,
@@ -777,7 +770,7 @@ export default async function detect( {
 		);
 	} );
 
-	// Stop observing initial viewport.
+	// Stop observing the initial viewport.
 	disconnectIntersectionObserver();
 
 	urlMetric = {
@@ -789,7 +782,7 @@ export default async function detect( {
 		elements: [],
 	};
 
-	const lcpMetric = lcpMetricCandidates.at( -1 );
+	const lcpMetric = lcpMetricCandidates[ lcpMetricCandidates.length - 1 ];
 
 	// Populate the elements in the URL Metric.
 	for ( const elementIntersection of elementIntersections ) {
@@ -842,12 +835,19 @@ export default async function detect( {
 	/** @type {string[]} */
 	const initializingExtensionModuleUrls = [];
 
-	for ( const extensionModuleUrl of extensionModuleUrls ) {
-		try {
-			/** @type {Extension} */
-			const extension = await import( extensionModuleUrl );
+	// Load all extensions in parallel.
+	await Promise.all(
+		extensionModuleUrls.map( async ( extensionModuleUrl ) => {
+			const extension = /** @type {Extension} */ await import(
+				extensionModuleUrl
+			);
 			extensions.set( extensionModuleUrl, extension );
+		} )
+	);
 
+	// Initialize extensions.
+	for ( const [ extensionModuleUrl, extension ] of extensions.entries() ) {
+		try {
 			const extensionLogger = createLogger(
 				isDebug,
 				`[Optimization Detective: ${
@@ -927,7 +927,7 @@ export default async function detect( {
 		doc.addEventListener(
 			'visibilitychange',
 			() => {
-				if ( document.visibilityState === 'hidden' ) {
+				if ( doc.visibilityState === 'hidden' ) {
 					// TODO: This will fire even when switching tabs.
 					resolve();
 				}
@@ -936,7 +936,7 @@ export default async function detect( {
 		);
 	} );
 
-	// Only proceed with submitting the URL Metric if viewport stayed the same size. Changing the viewport size (e.g. due
+	// Only proceed with submitting the URL Metric if the viewport stayed the same size. Changing the viewport size (e.g. due
 	// to resizing a window or changing the orientation of a device) will result in unexpected metrics being collected.
 	if ( didWindowResize ) {
 		log( 'Aborting URL Metric collection due to viewport size change.' );
@@ -1009,7 +1009,7 @@ export default async function detect( {
 	}
 
 	/*
-	 * Now prepare the URL Metric to be sent as JSON request body.
+	 * Now prepare the URL Metric to be sent in the JSON request body.
 	 */
 
 	const maxBodyLengthKiB = 64;

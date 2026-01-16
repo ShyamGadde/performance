@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Gets the freshness age (TTL) for a given URL Metric.
  *
- * When a URL Metric expires it is eligible to be replaced by a newer one if its viewport lies within the same breakpoint.
+ * When a URL Metric expires, it is eligible to be replaced by a newer one if its viewport lies within the same breakpoint.
  *
  * @since 0.1.0
  * @access private
@@ -27,7 +27,7 @@ function od_get_url_metric_freshness_ttl(): int {
 	 * Filters age (TTL) for which a URL Metric can be considered fresh.
 	 *
 	 * @since 0.1.0
-	 * @since n.e.x.t Negative values disable timestamp-based freshness checks.
+	 * @since 1.0.0 Negative values disable timestamp-based freshness checks.
 	 * @link https://github.com/WordPress/performance/blob/trunk/plugins/optimization-detective/docs/hooks.md#:~:text=Filter%3A%20od_url_metric_freshness_ttl
 	 *
 	 * @param int $ttl Expiration TTL in seconds. Defaults to 1 week.
@@ -67,7 +67,7 @@ function od_get_normalized_query_vars(): array {
  * Get the URL for the current request.
  *
  * This is essentially the REQUEST_URI prefixed by the scheme and host for the home URL.
- * This is needed in particular due to subdirectory installs.
+ * This is needed in particular due to subdirectory installations.
  *
  * @since 0.1.1
  * @access private
@@ -117,6 +117,7 @@ function od_get_current_url(): string {
  * @return non-empty-string Slug.
  */
 function od_get_url_metrics_slug( array $query_vars ): string {
+	// TODO: The JSON_UNESCAPED_SLASHES flag could be used here, but beware this could invalidate URL Metrics. See <https://github.com/WordPress/performance/pull/1949>.
 	return md5( (string) wp_json_encode( $query_vars ) );
 }
 
@@ -135,7 +136,7 @@ function od_get_current_theme_template() {
 	global $template, $_wp_current_template_id;
 
 	if ( wp_is_block_theme() && isset( $_wp_current_template_id ) ) {
-		$block_template = get_block_template( $_wp_current_template_id, 'wp_template' );
+		$block_template = get_block_template( $_wp_current_template_id );
 		if ( $block_template instanceof WP_Block_Template ) {
 			return $block_template;
 		}
@@ -238,6 +239,7 @@ function od_get_current_url_metrics_etag( OD_Tag_Visitor_Registry $tag_visitor_r
 	 */
 	$data = (array) apply_filters( 'od_current_url_metrics_etag_data', $data );
 
+	// TODO: The JSON_UNESCAPED_SLASHES flag could be used here.
 	return md5( (string) wp_json_encode( $data ) );
 }
 
@@ -337,7 +339,7 @@ function od_get_maximum_viewport_aspect_ratio(): float {
  *
  * Each number represents the maximum width (inclusive) for a given breakpoint. So if there is one number, 480, then
  * this means there will be two viewport groupings, one for 0<=480, and another >480. If instead there were three
- * provided breakpoints (320, 480, 576) then this means there will be four groups:
+ * provided breakpoints (320, 480, 576), then this means there will be four groups:
  *
  *  1. 0-320 (small smartphone)
  *  2. 321-480 (normal smartphone)
@@ -352,7 +354,7 @@ function od_get_maximum_viewport_aspect_ratio(): float {
  *
  * These breakpoints appear to be used the most in media queries that affect frontend styles.
  *
- * This array may be empty in which case there are no responsive breakpoints and all URL Metrics are collected in a
+ * This array may be empty, in which case there are no responsive breakpoints, and all URL Metrics are collected in a
  * single group.
  *
  * @since 0.1.0
@@ -441,7 +443,7 @@ function od_get_url_metrics_breakpoint_sample_size(): int {
 /**
  * Gets the maximum allowed size in bytes for a URL Metric serialized to JSON.
  *
- * @since n.e.x.t
+ * @since 1.0.0
  * @access private
  *
  * @return positive-int Maximum allowed byte size.
@@ -450,7 +452,7 @@ function od_get_maximum_url_metric_size(): int {
 	/**
 	 * Filters the maximum allowed size in bytes for a URL Metric serialized to JSON.
 	 *
-	 * @since n.e.x.t
+	 * @since 1.0.0
 	 * @link https://github.com/WordPress/performance/blob/trunk/plugins/optimization-detective/docs/hooks.md#:~:text=Filter%3A%20od_maximum_url_metric_size
 	 *
 	 * @param int $max_size Maximum allowed byte size.
