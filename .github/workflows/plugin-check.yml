@@ -128,7 +128,7 @@ jobs:
           path: build
 
       - name: Run plugin check
-        uses: wordpress/plugin-check-action@d746dd94fcef98cefd3a8dc03b4dc6341d87612b # main
+        uses: wordpress/plugin-check-action@73f192672f88af4fb2cbcf3353d138f0293f8e2c # main
         with:
           build-dir: ./build/${{ matrix.plugin }}
           slug: ${{ matrix.plugin }}
